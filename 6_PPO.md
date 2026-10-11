@@ -1,0 +1,1 @@
+理解 TRPO 的思想之后，PPO 就十分简单了。TRPO 求解的复杂性很大程度上来自 KL 散度的约束 $\mathbb{E}_{s\sim\nu^\pi_\gamma}\left[ D_{KL}\left(\pi_\theta(\cdot|s),\pi_{\theta'}(\cdot|s)\right) \right]\leqslant \delta$ ，这在理论上是严格的，但是实践中不好用。PPO 注意到其清晰的物理意义：
