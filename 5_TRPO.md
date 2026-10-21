@@ -84,7 +84,11 @@ $$
 \label{constraint}
 $$
 
+在 TRPO 的论文中，作者证明了在该约束条件下，对 $L_\theta(\theta')$ 的优化会单调提升 $J(\theta')$ 。
+
 > ⚠️ TRPO 算法推导过程中的下标是非常重要的，哪里是 $\pi(\theta)$ 哪里是 $\pi(\theta')$ 这都是非常讲究、非常严格的，过程差一个 $'$ 结果就完全不一样，因此必须非常小心。
+
+
 
 #### TRPO 的物理图像
 
@@ -96,6 +100,8 @@ TRPO 原论文里对 $\eqref{loss1}$ 的解释很好的连接起了和 TRPO 算�
 >
 > This equation implies that any policy update $\pi(\theta)\rightarrow\pi(\theta')$ that has a nonegative expected advantage at *every* state $s$, i.e. $\sum_a\pi_{\theta'}(a|s)A_{\pi_\theta}(s,a)>0$ , is guaranteed to increase the policy performance $J(\theta)$, or leave it constant in the case that the expected advantage is zero everywhere. This implies the classic result that the update performed by exact policy iteration, which uses the deterministic policy $\pi'(a|s)=\arg\max_aA_\pi(s,a)$, improves the policy if there is at least one state-action pair with a positive advantage value and nonzero state visitation probability, otherwise the algorithm has converged to the optimal policy.
 
+> 另外，本章的推导相对 TRPO 原论文做了一些简化，原论文导出了非常严格的优化目标下界。我们的简化集中在最后引入 KL-Divergence 的过程，我们直接引入了它，但并没有证明该约束就一定对前面 $\nu^{\pi'}_\gamma\sim \nu^{\pi}_\gamma$ 的近似起到有效的保障。在 TRPO 的原文中，作者证明了 $J(\theta')$ 有一个下界 $L_\theta(\theta')-CD^{\text{max}}_{\text{KL}}(\pi,\pi')$ ，这样可以把 $\max_{\theta'} J(\theta')$ 的优化问题转为 $\max_{\theta'} L_\theta(\theta')-CD^{\max}_{\text{KL}}(\pi,\pi')$ 的优化问题，而后者可以看作式 $\eqref{constraint}$ 的拉格朗日乘子形式，这样才引入了 KL-Divergence。
+
 #### 我们为什么需要 TRPO？
 
 Policy Gradient 系列算法（Actor-Critic 算法也算做 Policy Gradient 算法，因为策略优化目标一致）的推导非常自然，但是实践中有很多问题，在一些简单任务上甚至打不过随机搜索算法（例如 CEM 等）。这主要是由于以下几个原因：
@@ -103,7 +109,7 @@ Policy Gradient 系列算法（Actor-Critic 算法也算做 Policy Gradient 算�
 1. 步长难以确定，一步走错可能导致整个训练崩溃。一方面，策略梯度方法的更新步长主要由学习率决定，这是一个超参数；另一方面，策略梯度方法用于更新的数据分布依赖策略本身。因此，如果某次更新步长过大，策略表现恶化，那新采到的数据也会变差，恶性循环；如果更新步长太小，那收敛又太慢。
 2. 参数空间的距离并不等于策略空间的距离。确定幅度的参数更新 $\Delta\theta$ 导致的策略分布变化可能差异巨大，但我们实际关心的是动作分布而不是参数本身，这一定程度上也是上一个问题的诱因。
 3. 样本效率低，梯度方差大。策略梯度是严格的 on-policy 算法，数据用一遍就得扔。而 TRPO 算法通过重要性采样，把采样分布依赖的策略与目标策略在信任区域内解耦，能够对数据做更充分的利用；同时实现了一定程度的 off-policy （在改进得到的 PPO 中有所体现），提高了数据效率。
-4. 没有严格的性能单调性保证。策略梯度只保证无穷小步长下性能递增，在有限步长近似下策略的真实回报可能下降。
+4. 没有严格的性能单调性保证。策略梯度只保证无穷小步长下性能递增，在有限步长近似下策略的真实回报可能下降。而 TRPO 证明在信任区域内对目标函数的优化会单调提升性能。
 
 TRPO 一定程度上解决了这些问题。总的来说， TRPO 算法解决的是每一步更新该走多远的问题，通过 KL 散度划定一个策略空间的信任区域 $\delta$ ，在该区间内可以按照目标函数放心优化，由理论保证策略性能单调递增。
 
